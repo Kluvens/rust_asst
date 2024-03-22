@@ -20,5 +20,4 @@ WHILE EQ :LOOP "TRUE [
       IF EQ :COLOR "15 [
          MAKE "COLOR "1
       ]
-
 ]

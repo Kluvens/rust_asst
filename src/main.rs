@@ -360,30 +360,32 @@ fn parse_operation(
     queries: &mut QueriesStruct,
 ) -> Result<String, String> {
     match operation {
-        Operation::Base(value) => match value.chars().next() {
-            Some('\"') => value[1..]
-                .parse::<f32>()
-                .map_err(|_| "BASE operation: Not a number".to_string())
-                .and_then(|num| {
-                    if num.is_finite() {
-                        Ok(value.to_string())
-                    } else {
-                        Err("BASE operation: Number is not normal".to_string())
-                    }
-                }),
+        Operation::Base(raw_value) => match raw_value.chars().next() {
+            Some('\"') => {
+                if raw_value == "\"TRUE" || raw_value == "\"FALSE" {
+                    Ok(raw_value.clone())
+                } else {
+                    raw_value[1..]
+                        .parse::<f32>()
+                        .map_err(|_| "BASE operation: Not a number".to_string())
+                        .and_then(|_| {
+                            Ok(raw_value.to_string())
+                        })
+                }
+            },
             Some(':') => {
-                let lookup_key = value.clone();
+                let lookup_key = raw_value.clone();
                 variable_table
                     .get(&lookup_key)
                     .cloned()
                     .ok_or_else(|| "BASE operation: Key error".to_string())
             }
-            _ => match value.as_str() {
+            _ => match raw_value.as_str() {
                 "XCOR" => Ok(queries.xcor.clone()),
                 "YCOR" => Ok(queries.ycor.clone()),
                 "HEADING" => Ok(queries.heading.clone()),
                 "COLOR" => Ok(queries.color.clone()),
-                _ => Err(format!("BASE operation: Unexpected value {}", value)),
+                _ => Err(format!("BASE operation: Unexpected value {}", raw_value)),
             },
         },
         Operation::Add(a, b)
@@ -429,8 +431,12 @@ fn parse_operation(
                     Ok(format!("{}{}", '\"', result))
                 }
                 Operation::Equal(_a, _b) => {
-                    if left == right {
-                        return Ok("TRUE".to_string());
+                    if (left == "\"TRUE" || left == "\"FALSE") && (right == "\"TRUE" || right == "\"FALSE") {
+                        if left == right {
+                            return Ok("TRUE".to_string());
+                        } else {
+                            return Ok("FALSE".to_string());
+                        }
                     }
 
                     if (left[1..].parse::<f32>().expect("not a number")
@@ -444,8 +450,12 @@ fn parse_operation(
                     }
                 }
                 Operation::Notequal(_a, _b) => {
-                    if left == right {
-                        return Ok("FALSE".to_string());
+                    if (left == "\"TRUE" || left == "\"FALSE") && (right == "\"TRUE" || right == "\"FALSE") {
+                        if left == right {
+                            return Ok("TRUE".to_string());
+                        } else {
+                            return Ok("FALSE".to_string());
+                        }
                     }
 
                     if (left[1..].parse::<f32>().expect("not a number")
@@ -541,7 +551,9 @@ fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
                 if let Some(stripped) = operation.strip_prefix('\"') {
                     if stripped.parse::<f32>().is_ok() {
                         stack.push(Operation::Base(operation.to_string()));
-                    } else if stripped != "TRUE" && stripped != "FALSE" {
+                    } else if stripped == "TRUE" || stripped == "FALSE" {
+                        stack.push(Operation::Base(operation.to_string()));
+                    } else {
                         return Err(format!("Unexpected value type {}", operation));
                     }
                 } else {
@@ -554,7 +566,7 @@ fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
     if stack.len() == 1 {
         Ok(stack.pop().expect("Invalid expression"))
     } else {
-        Err("There are sitll some values in the stack".to_string())
+        Err("There are still some values in the stack".to_string())
     }
 }
 
@@ -632,6 +644,10 @@ fn extract_commands(
 ) -> Result<(Vec<Command>, usize), String> {
     let mut commands: Vec<Command> = Vec::new();
     let mut i = start;
+
+    if !lines.contains(&"]") {
+        return Err("Expresion Incomplete: lacking ]".to_string());
+    }
 
     while i < lines.len() {
         let parts: Vec<&str> = lines
