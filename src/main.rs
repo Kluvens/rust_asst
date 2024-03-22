@@ -62,7 +62,7 @@ fn execute_command(
     is_in_procedure: bool,
     procedure_args: &mut HashMap<String, String>,
     queries: &mut QueriesStruct,
-    mut image: &mut Image,
+    image: &mut Image,
 ) -> Result<(), String> {
     match command {
         Command::Penup => {
@@ -539,7 +539,7 @@ fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
             }
             _ => {
                 if let Some(stripped) = operation.strip_prefix('\"') {
-                    if let Ok(_) = stripped.parse::<f32>() {
+                    if stripped.parse::<f32>().is_ok() {
                         stack.push(Operation::Base(operation.to_string()));
                     } else if stripped != "TRUE" && stripped != "FALSE" {
                         return Err(format!("Unexpected value type {}", operation));
@@ -778,7 +778,7 @@ fn main() -> Result<(), ()> {
         }
     }
 
-    match image_path.extension().map(|s| s.to_str()).flatten() {
+    match image_path.extension().and_then(|s| s.to_str()) {
         Some("svg") => {
             let res = image.save_svg(&image_path);
             if let Err(e) = res {
