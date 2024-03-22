@@ -7,37 +7,37 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 enum Command {
-    PENUP,
-    PENDOWN,
-    FORWARD(Operation),
-    BACK(Operation),
-    LEFT(Operation),
-    RIGHT(Operation),
-    SETPENCOLOR(Operation),
-    TURN(Operation),
-    SETHEADING(Operation),
-    SETX(Operation),
-    SETY(Operation),
-    MAKE(String, Operation),
-    ADDASSIGN(String, Operation),
-    IF(Operation, Vec<Command>),
-    WHILE(Operation, Vec<Command>),
-    PROCEDURE(String, Vec<String>),
+    Penup,
+    Pendown,
+    Forward(Operation),
+    Back(Operation),
+    Left(Operation),
+    Right(Operation),
+    Setpencolor(Operation),
+    Turn(Operation),
+    Setheading(Operation),
+    Setx(Operation),
+    Sety(Operation),
+    Make(String, Operation),
+    Addassign(String, Operation),
+    If(Operation, Vec<Command>),
+    Whlie(Operation, Vec<Command>),
+    Procedure(String, Vec<String>),
 }
 
 #[derive(Debug, Clone)]
 enum Operation {
-    BASE(String),
-    ADD(Box<Operation>, Box<Operation>),
-    SUBTRACT(Box<Operation>, Box<Operation>),
-    MULTIPLY(Box<Operation>, Box<Operation>),
-    DIVIDE(Box<Operation>, Box<Operation>),
-    EQUAL(Box<Operation>, Box<Operation>),
-    NOTEQUAL(Box<Operation>, Box<Operation>),
-    GREATERTHAN(Box<Operation>, Box<Operation>),
-    LESSTHAN(Box<Operation>, Box<Operation>),
-    AND(Box<Operation>, Box<Operation>),
-    OR(Box<Operation>, Box<Operation>),
+    Base(String),
+    Add(Box<Operation>, Box<Operation>),
+    Subtract(Box<Operation>, Box<Operation>),
+    Multiply(Box<Operation>, Box<Operation>),
+    Divide(Box<Operation>, Box<Operation>),
+    Equal(Box<Operation>, Box<Operation>),
+    Notequal(Box<Operation>, Box<Operation>),
+    Greaterthan(Box<Operation>, Box<Operation>),
+    Lessthan(Box<Operation>, Box<Operation>),
+    And(Box<Operation>, Box<Operation>),
+    Or(Box<Operation>, Box<Operation>),
 }
 
 #[derive(Debug)]
@@ -65,16 +65,16 @@ fn execute_command(
     mut image: &mut Image,
 ) -> Result<(), String> {
     match command {
-        Command::PENUP => {
+        Command::Penup => {
             queries.is_pen_down = "FALSE".to_string();
         },
-        Command::PENDOWN => {
+        Command::Pendown => {
             queries.is_pen_down = "TRUE".to_string();
         },
-        Command::FORWARD(numpixels)
-        | Command::BACK(numpixels)
-        | Command::RIGHT(numpixels)
-        | Command::LEFT(numpixels) => {
+        Command::Forward(numpixels)
+        | Command::Back(numpixels)
+        | Command::Right(numpixels)
+        | Command::Left(numpixels) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
             let is_pen_down = parse_boolean(&queries.is_pen_down)?;
             let x = queries.xcor[1..].parse::<f32>().expect("cannot parse as x coordinate");
@@ -83,7 +83,7 @@ fn execute_command(
             let result = parse_operation(numpixels, table, queries)?;
             let length = result[1..].parse::<f32>().expect("cannot parse as length");
             match command {
-                Command::FORWARD(_numpixels) => {
+                Command::Forward(_numpixels) => {
                     if is_pen_down {
                         let color_index: usize = queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(&mut image, x, y, direction, length, unsvg::COLORS[color_index]).unwrap();
@@ -95,7 +95,7 @@ fn execute_command(
                         queries.ycor = format!("{}{}", "\"", new_y);
                     }
                 },
-                Command::BACK(_numpixels) => {
+                Command::Back(_numpixels) => {
                     if is_pen_down {
                         let color_index: usize = queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(&mut image, x, y, direction + 180, length, unsvg::COLORS[color_index]).unwrap();
@@ -107,7 +107,7 @@ fn execute_command(
                         queries.ycor = format!("{}{}", "\"", new_y);
                     }
                 },
-                Command::RIGHT(_numpixels) => {
+                Command::Right(_numpixels) => {
                     if is_pen_down {
                         let color_index: usize = queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(&mut image, x, y, direction + 90, length, unsvg::COLORS[color_index]).unwrap();
@@ -119,7 +119,7 @@ fn execute_command(
                         queries.ycor = format!("{}{}", "\"", new_y);
                     }
                 },
-                Command::LEFT(_numpixels) => {
+                Command::Left(_numpixels) => {
                     if is_pen_down {
                         let color_index: usize = queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(&mut image, x, y, direction + 270, length, unsvg::COLORS[color_index]).unwrap();
@@ -136,21 +136,21 @@ fn execute_command(
                 }
             }
         },
-        Command::SETPENCOLOR(colorcode) => {
+        Command::Setpencolor(colorcode) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
             let result = parse_operation(colorcode, table, queries)?;
             queries.color = result;
         },
-        Command::TURN(degrees)
-        | Command::SETHEADING(degrees) => {
+        Command::Turn(degrees)
+        | Command::Setheading(degrees) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
             let result = parse_operation(degrees, table, queries)?;
             match command {
-                Command::TURN(_degrees) => {
+                Command::Turn(_degrees) => {
                     let new_direction = queries.heading[1..].parse::<i32>().expect("cannot parse heading") + result[1..].parse::<i32>().expect("cannot parse result");
                     queries.heading = format!("{}{}", "\"", new_direction.to_string());
                 },
-                Command::SETHEADING(_degrees) => {
+                Command::Setheading(_degrees) => {
                     queries.heading = result;
                 },
                 _ => {
@@ -158,15 +158,15 @@ fn execute_command(
                 }
             }
         },
-        Command::SETX(location)
-        | Command::SETY(location) => {
+        Command::Setx(location)
+        | Command::Sety(location) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
             let result = parse_operation(location, table, queries)?;
             match command {
-                Command::SETX(_location) => {
+                Command::Setx(_location) => {
                     queries.xcor = result;
                 },
-                Command::SETY(_location) => {
+                Command::Sety(_location) => {
                     queries.ycor = result;
                 },
                 _ => {
@@ -174,12 +174,12 @@ fn execute_command(
                 }
             }
         },
-        Command::MAKE(variable_name, value) => {
+        Command::Make(variable_name, value) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
             let variable_value = parse_operation(value, table, queries)?;
             table.insert(variable_name.clone().replace("\"", ":"), variable_value);
         },
-        Command::ADDASSIGN(variable_name, value) => {
+        Command::Addassign(variable_name, value) => {
             let lookup_key = variable_name.replace("\"", ":");
             match variable_table.get(&lookup_key) {
                 Some(var) => {
@@ -195,7 +195,7 @@ fn execute_command(
                 }
             }
         },
-        Command::IF(operation, commands) => {
+        Command::If(operation, commands) => {
             let table = if is_in_procedure { &procedure_args } else { &variable_table };
             let if_condition = parse_operation(operation, &table, queries)?;
             if if_condition == "TRUE".to_string() {
@@ -204,7 +204,7 @@ fn execute_command(
                 }
             }
         },
-        Command::WHILE(operation, commands) => {
+        Command::Whlie(operation, commands) => {
             while {
                 // Limit the scope of the immutable borrow
                 let table = if is_in_procedure { &procedure_args } else { &variable_table };
@@ -216,7 +216,7 @@ fn execute_command(
                 }
             }
         },
-        Command::PROCEDURE(procedure_name, params) => {
+        Command::Procedure(procedure_name, params) => {
             // get procedure name
             let procedure = dummy_procedures.get(procedure_name).expect("msg");
             // get procedure defined args list
@@ -251,7 +251,7 @@ fn execute_command(
 
 fn parse_operation(operation: &Operation, variable_table: &HashMap<String, String>, queries: &mut QueriesStruct,) -> Result<String, String> {
     match operation {
-        Operation::BASE(value) => {
+        Operation::Base(value) => {
             match value.chars().next() {
                 Some('\"') => {
                     value[1..].parse::<f32>()
@@ -289,29 +289,29 @@ fn parse_operation(operation: &Operation, variable_table: &HashMap<String, Strin
                 }
             }
         },
-        Operation::ADD(a, b) | Operation::SUBTRACT(a, b) | Operation::MULTIPLY(a, b) | Operation::DIVIDE(a, b)
-        | Operation::EQUAL(a, b) | Operation::NOTEQUAL(a, b) | Operation::LESSTHAN(a, b) | Operation::GREATERTHAN(a, b)
-        | Operation::AND(a, b) | Operation::OR(a, b) => {
+        Operation::Add(a, b) | Operation::Subtract(a, b) | Operation::Multiply(a, b) | Operation::Divide(a, b)
+        | Operation::Equal(a, b) | Operation::Notequal(a, b) | Operation::Lessthan(a, b) | Operation::Greaterthan(a, b)
+        | Operation::And(a, b) | Operation::Or(a, b) => {
             let left = parse_operation(&a, variable_table, queries)?;
             let right = parse_operation(&b, variable_table, queries)?;
 
             match operation {
-                Operation::ADD(_a, _b) => {
+                Operation::Add(_a, _b) => {
                     let result = left[1..].parse::<f32>().expect("not a number") + right[1..].parse::<f32>().expect("not a number");
 
                     Ok(format!("{}{}", '\"', result))
                 },
-                Operation::SUBTRACT(_a, _b) => {
+                Operation::Subtract(_a, _b) => {
                     let result = left[1..].parse::<f32>().expect("not a number") - right[1..].parse::<f32>().expect("not a number");
         
                     Ok(format!("{}{}", '\"', result))
                 },
-                Operation::MULTIPLY(_a, _b) => {
+                Operation::Multiply(_a, _b) => {
                     let result = left[1..].parse::<f32>().expect("not a number") * right[1..].parse::<f32>().expect("not a number");
         
                     Ok(format!("{}{}", '\"', result))
                 },
-                Operation::DIVIDE(_a, _b) => {
+                Operation::Divide(_a, _b) => {
                     if right[1..].parse::<f32>().expect("not a number") == 0.0 {
                         return Err("divide by 0".to_string());
                     }
@@ -320,41 +320,49 @@ fn parse_operation(operation: &Operation, variable_table: &HashMap<String, Strin
         
                     Ok(format!("{}{}", '\"', result))
                 },
-                Operation::EQUAL(_a, _b) => {
+                Operation::Equal(_a, _b) => {
+                    if left == right {
+                        return Ok("TRUE".to_string());
+                    }
+
                     if (left[1..].parse::<f32>().expect("not a number") - right[1..].parse::<f32>().expect("not a number")).abs() < f32::EPSILON {
                         Ok("TRUE".to_string())
                     } else {
                         Ok("FALSE".to_string())
                     }
                 },
-                Operation::NOTEQUAL(_a, _b) => {
+                Operation::Notequal(_a, _b) => {
+                    if left == right {
+                        return Ok("FALSE".to_string());
+                    }
+
                     if (left[1..].parse::<f32>().expect("not a number") - right[1..].parse::<f32>().expect("not a number")).abs() < f32::EPSILON {
                         Ok("FALSE".to_string())
                     } else {
                         Ok("TRUE".to_string())
                     }
                 },
-                Operation::LESSTHAN(_a, _b) => {
+                Operation::Lessthan(_a, _b) => {
                     if left[1..].parse::<f32>().expect("not a number") - right[1..].parse::<f32>().expect("not a number") < 0.0 {
                         Ok("TRUE".to_string())
                     } else {
                         Ok("FALSE".to_string())
                     }
                 },
-                Operation::GREATERTHAN(_a, _b) => {
+                Operation::Greaterthan(_a, _b) => {
                     if left[1..].parse::<f32>().expect("not a number") - right[1..].parse::<f32>().expect("not a number") > 0.0 {
                         Ok("TRUE".to_string())
                     } else {
                         Ok("FALSE".to_string())
                     }
                 },
-                Operation::AND(_a, _b) => {
+                Operation::And(_a, _b) => {
                     let left_bool = parse_boolean(&left)?;
                     let right_bool = parse_boolean(&right)?;
         
                     Ok(if left_bool && right_bool { "TRUE".to_string() } else { "FALSE".to_string() })
                 },
-                Operation::OR(_a, _b) => {
+                Operation::Or(_a, _b) => {
                     let left_bool = parse_boolean(&left)?;
                     let right_bool = parse_boolean(&right)?;
         
@@ -383,16 +391,16 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
                 let left = stack.pop().expect("Missing left operand");
                 let right = stack.pop().expect("Missing right operand");
                 let op = match *operation {
-                    "+" => Operation::ADD(Box::new(left), Box::new(right)),
-                    "-" => Operation::SUBTRACT(Box::new(left), Box::new(right)),
-                    "*" => Operation::MULTIPLY(Box::new(left), Box::new(right)),
-                    "/" => Operation::DIVIDE(Box::new(left), Box::new(right)),
-                    "EQ" => Operation::EQUAL(Box::new(left), Box::new(right)),
-                    "NE" => Operation::NOTEQUAL(Box::new(left), Box::new(right)),
-                    "AND" => Operation::AND(Box::new(left), Box::new(right)),
-                    "OR" => Operation::OR(Box::new(left), Box::new(right)),
-                    "GT" => Operation::GREATERTHAN(Box::new(left), Box::new(right)),
-                    "LT" => Operation::LESSTHAN(Box::new(left), Box::new(right)),
+                    "+" => Operation::Add(Box::new(left), Box::new(right)),
+                    "-" => Operation::Subtract(Box::new(left), Box::new(right)),
+                    "*" => Operation::Multiply(Box::new(left), Box::new(right)),
+                    "/" => Operation::Divide(Box::new(left), Box::new(right)),
+                    "EQ" => Operation::Equal(Box::new(left), Box::new(right)),
+                    "NE" => Operation::Notequal(Box::new(left), Box::new(right)),
+                    "AND" => Operation::And(Box::new(left), Box::new(right)),
+                    "OR" => Operation::Or(Box::new(left), Box::new(right)),
+                    "GT" => Operation::Greaterthan(Box::new(left), Box::new(right)),
+                    "LT" => Operation::Lessthan(Box::new(left), Box::new(right)),
                     _ => {
                         return Err(format!("Invalid operator {}", operation));
                     },
@@ -402,12 +410,12 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
             _ => {
                 if operation.starts_with('\"') {
                     if let Ok(_) = operation[1..].parse::<f32>() {
-                    stack.push(Operation::BASE(operation.to_string()));
+                    stack.push(Operation::Base(operation.to_string()));
                     } else {
                         return Err(format!("Unexpected value type {}", operation));
                     }
                 } else {
-                    stack.push(Operation::BASE(operation.to_string()));
+                    stack.push(Operation::Base(operation.to_string()));
                 }
             }
         }
@@ -426,8 +434,8 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
 
     match parts[0] {
         "PENUP" | "PENDOWN" if parts.len() == 1 => Ok(match parts[0] {
-            "PENUP" => Command::PENUP,
-            "PENDOWN" => Command::PENDOWN,
+            "PENUP" => Command::Penup,
+            "PENDOWN" => Command::Pendown,
             _ => unreachable!(), // We won't get here
         }),
         "FORWARD" | "BACK" | "RIGHT" | "LEFT" | "SETPENCOLOR" | "TURN" | "SETHEADING" | "SETX" | "SETY" if parts.len() > 1 => {
@@ -435,15 +443,15 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
             let extracted = extract_operations(&operations)?; // Make sure this function returns Result as well
 
             Ok(match parts[0] {
-                "FORWARD" => Command::FORWARD(extracted),
-                "BACK" => Command::BACK(extracted),
-                "RIGHT" => Command::RIGHT(extracted),
-                "LEFT" => Command::LEFT(extracted),
-                "SETPENCOLOR" => Command::SETPENCOLOR(extracted),
-                "TURN" => Command::TURN(extracted),
-                "SETHEADING" => Command::SETHEADING(extracted),
-                "SETX" => Command::SETX(extracted),
-                "SETY" => Command::SETY(extracted),
+                "Forward" => Command::Forward(extracted),
+                "Back" => Command::Back(extracted),
+                "RIGHT" => Command::Right(extracted),
+                "LEFT" => Command::Left(extracted),
+                "SETPENCOLOR" => Command::Setpencolor(extracted),
+                "TURN" => Command::Turn(extracted),
+                "SETHEADING" => Command::Setheading(extracted),
+                "SETX" => Command::Setx(extracted),
+                "SETY" => Command::Sety(extracted),
                 _ => unreachable!(), // We won't get here
             })
         },
@@ -453,8 +461,8 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
             let extracted = extract_operations(&operations)?; // Adjust for error handling
 
             Ok(match parts[0] {
-                "MAKE" => Command::MAKE(variable_name.to_string(), extracted),
-                "ADDASSIGN" => Command::ADDASSIGN(variable_name.to_string(), extracted),
+                "MAKE" => Command::Make(variable_name.to_string(), extracted),
+                "ADDASSIGN" => Command::Addassign(variable_name.to_string(), extracted),
                 _ => unreachable!(), // We won't get here
             })
         },
@@ -462,7 +470,7 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
             let args: Vec<String> = parts.get(1..).unwrap_or(&[]).iter().map(|&s| s.to_string()).collect();
             let procedure = dummy_procedures.get(parts[0]).ok_or_else(|| "Procedure not found".to_string())?;
             if args.len() == procedure.args.len() {
-                Ok(Command::PROCEDURE(parts[0].to_string(), args))
+                Ok(Command::Procedure(parts[0].to_string(), args))
             } else {
                 Err("Number of parameters does not match".to_string())
             }
@@ -472,8 +480,8 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
 }
 
 /// There are a few possible commands:
-/// First is basic commands such as PENDOWN and FORWARD
-/// Second is IF and WHILE as well as back bracket "]"
+/// First is basic commands such as Pendown and Forward
+/// Second is IF and WHILE as well as Back bracket "]"
 /// Third would be Procedure definition and calling
 fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut HashMap<String, DummyProcedure>) -> Result<(Vec<Command>, usize), String> {
 
@@ -498,7 +506,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
                 i = new_index;
                 let operations = extract_operations(&raw_operations)?;
 
-                commands.push(Command::IF(operations, block_commands));
+                commands.push(Command::If(operations, block_commands));
             },
             Some(&"WHILE") => {
                 if parts[parts.len() - 1] != "[" {
@@ -510,7 +518,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
                 i = new_index;
                 let operations = extract_operations(&raw_operations)?;
 
-                commands.push(Command::WHILE(operations, block_commands));
+                commands.push(Command::Whlie(operations, block_commands));
             },
             Some(&"]") => {
                 return Ok((commands, i));
@@ -592,7 +600,7 @@ fn main() -> Result<(), ()> {
             commands
         },
         Err(e) => {
-            eprintln!("Error processing commands: {}", e);
+            eprintln!("\x1b[31mError processing commands: {}\x1b[0m", e);
             std::process::exit(1);
         }
     };
