@@ -538,8 +538,8 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
                 stack.push(op);
             }
             _ => {
-                if operation.starts_with('\"') {
-                    if let Ok(_) = operation[1..].parse::<f32>() {
+                if let Some(stripped) = operation.strip_prefix('\"') {
+                    if let Ok(_) = stripped.parse::<f32>() {
                         stack.push(Operation::Base(operation.to_string()));
                     } else {
                         return Err(format!("Unexpected value type {}", operation));
@@ -554,7 +554,7 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
     if stack.len() == 1 {
         Ok(stack.pop().expect("Invalid expression"))
     } else {
-        return Err("wrong number of arguments".to_string());
+        Err("wrong number of arguments".to_string())
     }
 }
 
