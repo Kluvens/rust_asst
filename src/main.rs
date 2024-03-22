@@ -98,7 +98,7 @@ fn execute_command(
                         let color_index: usize =
                             queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(
-                            &mut image,
+                            image,
                             x,
                             y,
                             direction,
@@ -163,7 +163,7 @@ fn execute_command(
                         let color_index: usize =
                             queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(
-                            &mut image,
+                            image,
                             x,
                             y,
                             direction + 270,
@@ -267,8 +267,8 @@ fn execute_command(
             } else {
                 &variable_table
             };
-            let if_condition = parse_operation(operation, &table, queries)?;
-            if if_condition == "TRUE".to_string() {
+            let if_condition = parse_operation(operation, table, queries)?;
+            if if_condition == *"TRUE" {
                 for command in commands.iter() {
                     execute_command(
                         command,
@@ -512,7 +512,7 @@ fn parse_boolean(value: &str) -> Result<bool, String> {
     }
 }
 
-fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
+fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
     let mut stack: Vec<Operation> = Vec::new();
 
     for operation in operations.iter().rev() {
@@ -541,10 +541,8 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
                 if let Some(stripped) = operation.strip_prefix('\"') {
                     if let Ok(_) = stripped.parse::<f32>() {
                         stack.push(Operation::Base(operation.to_string()));
-                    } else {
-                        if stripped != "TRUE" && stripped != "FALSE" {
-                            return Err(format!("Unexpected value type {}", operation));
-                        }
+                    } else if stripped != "TRUE" && stripped != "FALSE" {
+                        return Err(format!("Unexpected value type {}", operation));
                     }
                 } else {
                     stack.push(Operation::Base(operation.to_string()));
