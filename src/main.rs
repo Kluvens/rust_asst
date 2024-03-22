@@ -232,14 +232,6 @@ fn execute_command(
 
             for (arg, param) in args.iter().zip(params.iter()) {
                 let table = if is_in_procedure { &procedure_args } else { &variable_table };
-                // let mut parameter = "".to_string();
-                // if is_in_procedure {
-                //     // it is possible that it is a variable, so loop up the tash table first
-                //     parameter = procedure_args.get(param).expect("msg").clone();
-                // } else {
-                //     // it is possible that it is a variable, so loop up the tash table first
-                //     parameter = variable_table.get(param).expect("msg").clone();
-                // }
                 match table.get(param) {
                     Some(parameter) => {
                         args_table.insert(arg.replace("\"", ":"), parameter.clone());
