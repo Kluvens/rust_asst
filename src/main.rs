@@ -243,7 +243,7 @@ fn execute_command(
                 variable_table
             };
             let variable_value = parse_operation(value, table, queries)?;
-            table.insert(variable_name.clone().replace("\"", ":"), variable_value);
+            table.insert(variable_name.clone().replace('\"', ":"), variable_value);
         }
         Command::Addassign(variable_name, value) => {
             let lookup_key = variable_name.replace("\"", ":");
@@ -542,7 +542,9 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
                     if let Ok(_) = stripped.parse::<f32>() {
                         stack.push(Operation::Base(operation.to_string()));
                     } else {
-                        return Err(format!("Unexpected value type {}", operation));
+                        if stripped != "TRUE" && stripped != "FALSE" {
+                            return Err(format!("Unexpected value type {}", operation));
+                        }
                     }
                 } else {
                     stack.push(Operation::Base(operation.to_string()));
@@ -554,7 +556,7 @@ fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
     if stack.len() == 1 {
         Ok(stack.pop().expect("Invalid expression"))
     } else {
-        Err("wrong number of arguments".to_string())
+        Err("There are sitll some values in the stack".to_string())
     }
 }
 
