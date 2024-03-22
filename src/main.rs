@@ -119,7 +119,7 @@ fn execute_command(
                         let color_index: usize =
                             queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(
-                            &mut image,
+                            image,
                             x,
                             y,
                             direction + 180,
@@ -141,7 +141,7 @@ fn execute_command(
                         let color_index: usize =
                             queries.color[1..].parse::<usize>().expect("Invalid color");
                         let (new_x, new_y) = Image::draw_simple_line(
-                            &mut image,
+                            image,
                             x,
                             y,
                             direction + 90,
@@ -207,7 +207,7 @@ fn execute_command(
                         .parse::<i32>()
                         .expect("cannot parse heading")
                         + result[1..].parse::<i32>().expect("cannot parse result");
-                    queries.heading = format!("{}{}", "\"", new_direction.to_string());
+                    queries.heading = format!("{}{}", "\"", new_direction);
                 }
                 Command::Setheading(_degrees) => {
                     queries.heading = result;
@@ -246,7 +246,7 @@ fn execute_command(
             table.insert(variable_name.clone().replace('\"', ":"), variable_value);
         }
         Command::Addassign(variable_name, value) => {
-            let lookup_key = variable_name.replace("\"", ":");
+            let lookup_key = variable_name.replace('\"', ":");
             match variable_table.get(&lookup_key) {
                 Some(var) => {
                     let num = var[1..].parse::<f32>().expect("not a number");
@@ -290,7 +290,7 @@ fn execute_command(
                 } else {
                     &variable_table
                 };
-                parse_operation(operation, table, queries)? == "TRUE".to_string()
+                parse_operation(operation, table, queries)? == *"TRUE"
             } {
                 for command in commands.iter() {
                     // Now variable_table is not immutably borrowed in this scope
@@ -324,7 +324,7 @@ fn execute_command(
                 };
                 match table.get(param) {
                     Some(parameter) => {
-                        args_table.insert(arg.replace("\"", ":"), parameter.clone());
+                        args_table.insert(arg.replace('\"', ":"), parameter.clone());
                     }
                     None => {
                         return Err("lookup key not found".to_string());
@@ -396,8 +396,8 @@ fn parse_operation(
         | Operation::Greaterthan(a, b)
         | Operation::And(a, b)
         | Operation::Or(a, b) => {
-            let left = parse_operation(&a, variable_table, queries)?;
-            let right = parse_operation(&b, variable_table, queries)?;
+            let left = parse_operation(a, variable_table, queries)?;
+            let right = parse_operation(b, variable_table, queries)?;
 
             match operation {
                 Operation::Add(_a, _b) => {
