@@ -1,0 +1,7 @@
+// Logical AND
+PENDOWN
+IF AND GT + "2 "2 * "1 "2 LT - "4 "1 / "12 "2 [
+   FORWARD "10
+]
+
+

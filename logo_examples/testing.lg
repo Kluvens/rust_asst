@@ -1,0 +1,50 @@
+// this file is testing
+// and empty lines should also be ignored
+
+// PENUP
+// FORWARD "50
+// PENDOWN
+// FORWARD "50
+// BACK "50
+// LEFT "30
+// RIGHT "20
+
+MAKE "distance "50
+PENUP
+FORWARD :distance
+PENDOWN
+FORWARD :distance
+
+IF EQ * "2 "25 + "30 - "40 "20 [
+  IF EQ "2 "2 [
+    BACK "2
+  ]
+]
+ADDASSIGN "distance :distance
+FORWARD :distance
+LEFT "10
+
+WHILE NE :distance "150 [
+  FORWARD :distance
+  ADDASSIGN "distance + "5 "5
+]
+
+TO L "Arg
+   FORWARD :Arg
+   LEFT :Arg
+END
+
+TO Box "Arg
+  IF EQ :Arg "2 [
+    L :Arg
+    TURN "180
+    L :Arg
+    TURN "-180
+   ]
+END
+
+PENDOWN
+
+MAKE "BOXLINE "2
+
+Box :BOXLINEs

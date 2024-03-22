@@ -1,0 +1,9 @@
+SETX "50
+RIGHT "10
+IF EQ * "2 "25 + "20 "30 [
+   PENDOWN
+   PENUP
+   BACK "2
+   SETPENCOLOR "14
+]
+LEFT "10

@@ -1,0 +1,8 @@
+// Verify that the PENUP and PENDOWN commands work as expected.
+PENUP
+FORWARD "50
+PENDOWN
+FORWARD "50
+LEFT "50
+BACK "50
+RIGHT "50

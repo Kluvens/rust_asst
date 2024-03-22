@@ -1,0 +1,13 @@
+enum Command {
+  PENUP,
+  PENDOWN,
+  FORWARD,
+  BACK,
+  LEFT,
+  RIGHT,
+  SETPENCOLOR,
+  TURN,
+  SETHEADING,
+  SETX,
+  SETY,
+}
