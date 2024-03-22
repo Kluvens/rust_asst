@@ -495,7 +495,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
             .unwrap()
             .collect();
 
-        match parts.get(0) {
+        match parts.first() {
             Some(&"IF") => {
                 if parts[parts.len() - 1] != "[" {
                     return Err("IF expression does not start with [".to_string());
@@ -540,7 +540,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
                 return Ok((commands, i));
             },
             _ => {
-                match parse_command(&lines[i], dummy_procedures) {
+                match parse_command(lines[i], dummy_procedures) {
                     Ok(cmd) => commands.push(cmd),
                     Err(e) => return Err(e),
                 }
@@ -575,9 +575,9 @@ fn main() -> Result<(), ()> {
     let height = args.height;
     let width = args.width;
 
-    let file_content = match read_to_string(&file_path) {
+    let file_content = match read_to_string(file_path) {
         Ok(content) => content,
-        Err(e) => {
+        Err(_) => {
             return Err(());
         },
     };
@@ -589,7 +589,7 @@ fn main() -> Result<(), ()> {
     
     for line in file_content.lines() {
         let line = line.trim();
-        if line.starts_with("// ") || line == "" {
+        if line.starts_with("// ") || line.is_empty() {
             continue;
         }
         lines.push(line);
@@ -608,8 +608,8 @@ fn main() -> Result<(), ()> {
     let mut image = Image::new(width, height);
 
     let mut queries_struct = QueriesStruct { 
-        xcor: format!("{}{}", "\"", (width/2).to_string()),
-        ycor: format!("{}{}", "\"", (height/2).to_string()),
+        xcor: format!("{}{}", "\"", (width/2)),
+        ycor: format!("{}{}", "\"", (height/2)),
         heading: "\"0".to_string(),
         color: "\"7".to_string(),
         is_pen_down: "FALSE".to_string(),
