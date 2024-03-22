@@ -1,4 +1,4 @@
-use core::{f32, panic};
+use core::f32;
 
 use clap::Parser;
 use unsvg::Image;
@@ -76,11 +76,7 @@ fn execute_command(
         | Command::RIGHT(numpixels)
         | Command::LEFT(numpixels) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
-            let is_pen_down = match queries.is_pen_down.as_str() {
-                "TRUE" => true,
-                "FALSE" => false,
-                _ => false,
-            };
+            let is_pen_down = parse_boolean(&queries.is_pen_down)?;
             let x = queries.xcor[1..].parse::<f32>().expect("cannot parse as x coordinate");
             let y = queries.ycor[1..].parse::<f32>().expect("cannot parse as y coordinate");
             let direction = queries.heading[1..].parse::<i32>().expect("cannot parse as direction");
@@ -353,42 +349,16 @@ fn parse_operation(operation: &Operation, variable_table: &HashMap<String, Strin
                     }
                 },
                 Operation::AND(_a, _b) => {
-                    let left_bool = match left.as_str() {
-                        "TRUE" => true,
-                        "FALSE" => false,
-                        _ => return Err("unknown operator".to_string()),
-                    };
+                    let left_bool = parse_boolean(&left)?;
+                    let right_bool = parse_boolean(&right)?;
         
-                    let right_bool = match right.as_str() {
-                        "TRUE" => true,
-                        "FALSE" => false,
-                        _ => return Err("unknown operator".to_string()),
-                    };
-        
-                    if left_bool && right_bool {
-                        Ok("TRUE".to_string())
-                    } else {
-                        Ok("FALSE".to_string())
-                    }
+                    Ok(if left_bool && right_bool { "TRUE".to_string() } else { "FALSE".to_string() })
                 },
                 Operation::OR(_a, _b) => {
-                    let left_bool = match left.as_str() {
-                        "TRUE" => true,
-                        "FALSE" => false,
-                        _ => return Err("unknown operator".to_string()),
-                    };
+                    let left_bool = parse_boolean(&left)?;
+                    let right_bool = parse_boolean(&right)?;
         
-                    let right_bool = match right.as_str() {
-                        "TRUE" => true,
-                        "FALSE" => false,
-                        _ => return Err("unknown operator".to_string()),
-                    };
-        
-                    if left_bool || right_bool {
-                        Ok("TRUE".to_string())
-                    } else {
-                        Ok("FALSE".to_string())
-                    }
+                    Ok(if left_bool || right_bool { "TRUE".to_string() } else { "FALSE".to_string() })
                 },
                 _ => Err("msg".to_string()),
             }
@@ -396,7 +366,15 @@ fn parse_operation(operation: &Operation, variable_table: &HashMap<String, Strin
     }
 }
 
-fn extract_operations(operations: &Vec<&str>) -> Operation {
+fn parse_boolean(value: &str) -> Result<bool, String> {
+    match value {
+        "TRUE" => Ok(true),
+        "FALSE" => Ok(false),
+        _ => Err("Unknown operator".to_string()),
+    }
+}
+
+fn extract_operations(operations: &Vec<&str>) -> Result<Operation, String> {
     let mut stack: Vec<Operation> = Vec::new();
 
     for operation in operations.iter().rev() {
@@ -415,7 +393,9 @@ fn extract_operations(operations: &Vec<&str>) -> Operation {
                     "OR" => Operation::OR(Box::new(left), Box::new(right)),
                     "GT" => Operation::GREATERTHAN(Box::new(left), Box::new(right)),
                     "LT" => Operation::LESSTHAN(Box::new(left), Box::new(right)),
-                    _ => panic!("unknown operator"),
+                    _ => {
+                        return Err(format!("Invalid operator {}", operation));
+                    },
                 };
                 stack.push(op);
             },
@@ -424,7 +404,7 @@ fn extract_operations(operations: &Vec<&str>) -> Operation {
                     if let Ok(_) = operation[1..].parse::<f32>() {
                     stack.push(Operation::BASE(operation.to_string()));
                     } else {
-                        panic!("unexpected value type");
+                        return Err(format!("Unexpected value type {}", operation));
                     }
                 } else {
                     stack.push(Operation::BASE(operation.to_string()));
@@ -434,9 +414,9 @@ fn extract_operations(operations: &Vec<&str>) -> Operation {
     }
 
     if stack.len() == 1 {
-        stack.pop().expect("Invalid expression")
+        Ok(stack.pop().expect("Invalid expression"))
     } else {
-        panic!("wrong number of arguments");
+        return Err("wrong number of arguments".to_string());
     }
     
 }
@@ -452,7 +432,7 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
         }),
         "FORWARD" | "BACK" | "RIGHT" | "LEFT" | "SETPENCOLOR" | "TURN" | "SETHEADING" | "SETX" | "SETY" if parts.len() > 1 => {
             let operations = parts[1..].to_vec();
-            let extracted = extract_operations(&operations); // Make sure this function returns Result as well
+            let extracted = extract_operations(&operations)?; // Make sure this function returns Result as well
 
             Ok(match parts[0] {
                 "FORWARD" => Command::FORWARD(extracted),
@@ -470,7 +450,7 @@ fn parse_command(line: &str, dummy_procedures: &HashMap<String, DummyProcedure>)
         "MAKE" | "ADDASSIGN" if parts.len() > 2 => {
             let variable_name = parts[1];
             let operations = parts[2..].to_vec();
-            let extracted = extract_operations(&operations); // Adjust for error handling
+            let extracted = extract_operations(&operations)?; // Adjust for error handling
 
             Ok(match parts[0] {
                 "MAKE" => Command::MAKE(variable_name.to_string(), extracted),
@@ -516,7 +496,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
                 let raw_operations = parts[1..parts.len()-1].to_vec();
                 let (block_commands, new_index) = extract_commands(lines, i + 1, dummy_procedures)?;
                 i = new_index;
-                let operations = extract_operations(&raw_operations);
+                let operations = extract_operations(&raw_operations)?;
 
                 commands.push(Command::IF(operations, block_commands));
             },
@@ -528,7 +508,7 @@ fn extract_commands(lines: &Vec<&str>, start: usize, dummy_procedures: &mut Hash
                 let raw_operations = parts[1..parts.len()-1].to_vec();
                 let (block_commands, new_index) = extract_commands(lines, i + 1, dummy_procedures)?;
                 i = new_index;
-                let operations = extract_operations(&raw_operations);
+                let operations = extract_operations(&raw_operations)?;
 
                 commands.push(Command::WHILE(operations, block_commands));
             },
