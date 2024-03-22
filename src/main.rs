@@ -84,7 +84,7 @@ fn execute_command(
             let x = queries.xcor[1..].parse::<f32>().expect("cannot parse as x coordinate");
             let y = queries.ycor[1..].parse::<f32>().expect("cannot parse as y coordinate");
             let direction = queries.heading[1..].parse::<i32>().expect("cannot parse as direction");
-            let result = parse_operation(numpixels, table)?;
+            let result = parse_operation(numpixels, table, queries)?;
             let length = result[1..].parse::<f32>().expect("cannot parse as length");
             match command {
                 Command::FORWARD(_numpixels) => {
@@ -142,19 +142,20 @@ fn execute_command(
         },
         Command::SETPENCOLOR(colorcode) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
-            let result = parse_operation(colorcode, table)?;
+            let result = parse_operation(colorcode, table, queries)?;
             queries.color = result;
         },
         Command::TURN(degrees)
         | Command::SETHEADING(degrees) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
-            let result = parse_operation(degrees, table)?;
+            let result = parse_operation(degrees, table, queries)?;
             match command {
                 Command::TURN(_degrees) => {
-                    println!("turns by {}", result);
+                    let new_direction = queries.heading[1..].parse::<i32>().expect("cannot parse heading") + result[1..].parse::<i32>().expect("cannot parse result");
+                    queries.heading = format!("{}{}", "\"", new_direction.to_string());
                 },
                 Command::SETHEADING(_degrees) => {
-                    println!("set heading by {}", result);
+                    queries.heading = result;
                 },
                 _ => {
                     return Err("Invalid Command".to_string());
@@ -164,13 +165,13 @@ fn execute_command(
         Command::SETX(location)
         | Command::SETY(location) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
-            let result = parse_operation(location, table)?;
+            let result = parse_operation(location, table, queries)?;
             match command {
                 Command::SETX(_location) => {
-                    println!("set x as {}", result);
+                    queries.xcor = result;
                 },
                 Command::SETY(_location) => {
-                    println!("set y as {}", result);
+                    queries.ycor = result;
                 },
                 _ => {
                     return Err("Invalid Command".to_string());
@@ -179,8 +180,7 @@ fn execute_command(
         },
         Command::MAKE(variable_name, value) => {
             let table = if is_in_procedure { procedure_args } else { variable_table };
-            let variable_value = parse_operation(value, table)?;
-            println!("Inserted '{}' with value {} into the hash table", variable_name, variable_value);
+            let variable_value = parse_operation(value, table, queries)?;
             table.insert(variable_name.clone().replace("\"", ":"), variable_value);
         },
         Command::ADDASSIGN(variable_name, value) => {
@@ -188,7 +188,7 @@ fn execute_command(
             match variable_table.get(&lookup_key) {
                 Some(var) => {
                     let num = var[1..].parse::<f32>().expect("not a number");
-                    let operation_result = parse_operation(value, variable_table)?;
+                    let operation_result = parse_operation(value, variable_table, queries)?;
                     let add_num = operation_result[1..].parse::<f32>().expect("not a number");
 
                     let result = num + add_num;
@@ -201,7 +201,7 @@ fn execute_command(
         },
         Command::IF(operation, commands) => {
             let table = if is_in_procedure { &procedure_args } else { &variable_table };
-            let if_condition = parse_operation(operation, &table)?;
+            let if_condition = parse_operation(operation, &table, queries)?;
             if if_condition == "TRUE".to_string() {
                 for command in commands.iter() {
                     execute_command(command, variable_table, dummy_procedures, is_in_procedure, procedure_args, queries, image)?;
@@ -212,7 +212,7 @@ fn execute_command(
             while {
                 // Limit the scope of the immutable borrow
                 let table = if is_in_procedure { &procedure_args } else { &variable_table };
-                parse_operation(operation, table)? == "TRUE".to_string()
+                parse_operation(operation, table, queries)? == "TRUE".to_string()
             } {
                 for command in commands.iter() {
                     // Now variable_table is not immutably borrowed in this scope
@@ -261,7 +261,7 @@ fn execute_command(
     Ok(())
 }
 
-fn parse_operation(operation: &Operation, variable_table: &HashMap<String, String>) -> Result<String, String> {
+fn parse_operation(operation: &Operation, variable_table: &HashMap<String, String>, queries: &mut QueriesStruct,) -> Result<String, String> {
     match operation {
         Operation::BASE(value) => {
             match value.chars().next() {
@@ -282,14 +282,30 @@ fn parse_operation(operation: &Operation, variable_table: &HashMap<String, Strin
                         .cloned()
                         .ok_or_else(|| "BASE operation: Key error".to_string())
                 },
-                _ => Err("BASE operation: Unexpected value".to_string()),
+                _ => {
+                    match value.as_str() {
+                        "XCOR" => {
+                            Ok(queries.xcor.clone())
+                        },
+                        "YCOR" => {
+                            Ok(queries.ycor.clone())
+                        },
+                        "HEADING" => {
+                            Ok(queries.heading.clone())
+                        },
+                        "COLOR" => {
+                            Ok(queries.color.clone())
+                        },
+                        _ => Err(format!("BASE operation: Unexpected value {}", value)),
+                    }
+                }
             }
         },
         Operation::ADD(a, b) | Operation::SUBTRACT(a, b) | Operation::MULTIPLY(a, b) | Operation::DIVIDE(a, b)
         | Operation::EQUAL(a, b) | Operation::NOTEQUAL(a, b) | Operation::LESSTHAN(a, b) | Operation::GREATERTHAN(a, b)
         | Operation::AND(a, b) | Operation::OR(a, b) => {
-            let left = parse_operation(&a, variable_table)?;
-            let right = parse_operation(&b, variable_table)?;
+            let left = parse_operation(&a, variable_table, queries)?;
+            let right = parse_operation(&b, variable_table, queries)?;
 
             match operation {
                 Operation::ADD(_a, _b) => {
