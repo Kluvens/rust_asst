@@ -5,6 +5,7 @@ use crate::utils::QueriesStruct;
 use unsvg::Image;
 use std::collections::HashMap;
 
+/// execute the code
 pub fn execute_command(
   command: &Command,
   variable_table: &mut HashMap<String, String>,

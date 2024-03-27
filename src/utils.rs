@@ -30,6 +30,8 @@ pub struct QueriesStruct {
     pub is_pen_down: String,
 }
 
+/// Extract commands to my enum
+/// so that they can be easily interpreted by the program
 pub fn extract_commands(
   lines: &Vec<&str>,
   start: usize,
@@ -109,6 +111,8 @@ pub fn extract_commands(
   Ok((commands, i))
 }
 
+/// Extract operations to my enum
+/// so that they can be easily interpreted by the program
 pub fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
   let mut stack: Vec<Operation> = Vec::new();
 
@@ -136,9 +140,7 @@ pub fn extract_operations(operations: &[&str]) -> Result<Operation, String> {
           }
           _ => {
               if let Some(stripped) = operation.strip_prefix('\"') {
-                  if stripped.parse::<f32>().is_ok() {
-                      stack.push(Operation::Base(operation.to_string()));
-                  } else if stripped == "TRUE" || stripped == "FALSE" {
+                  if stripped.parse::<f32>().is_ok() || stripped == "TRUE" || stripped == "FALSE" {
                       stack.push(Operation::Base(operation.to_string()));
                   } else {
                       return Err(format!("Unexpected value type {}", operation));

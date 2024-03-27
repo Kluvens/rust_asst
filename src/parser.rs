@@ -4,6 +4,7 @@ use crate::procedures::DummyProcedure;
 use crate::utils::{QueriesStruct, extract_operations};
 use std::collections::HashMap;
 
+/// do the logic for commands
 pub fn parse_command(
   line: &str,
   dummy_procedures: &HashMap<String, DummyProcedure>,
@@ -67,6 +68,7 @@ pub fn parse_command(
   }
 }
 
+/// do the logic for operation
 pub fn parse_operation(
   operation: &Operation,
   variable_table: &HashMap<String, String>,
@@ -80,10 +82,7 @@ pub fn parse_operation(
               } else {
                   raw_value[1..]
                       .parse::<f32>()
-                      .map_err(|_| "BASE operation: Not a number".to_string())
-                      .and_then(|_| {
-                          Ok(raw_value.to_string())
-                      })
+                      .map_err(|_| "BASE operation: Not a number".to_string()).map(|_| raw_value.to_string())
               }
           },
           Some(':') => {
