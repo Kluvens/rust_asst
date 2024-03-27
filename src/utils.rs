@@ -38,7 +38,7 @@ pub fn extract_commands(
   let mut commands: Vec<Command> = Vec::new();
   let mut i = start;
 
-  if !lines.contains(&"]") {
+  if lines.contains(&"[") && !lines.contains(&"]") {
       return Err("Expresion Incomplete: lacking ]".to_string());
   }
 

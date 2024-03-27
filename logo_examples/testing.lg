@@ -1,13 +1,13 @@
 // this file is testing
 // and empty lines should also be ignored
 
-// PENUP
-// FORWARD "50
-// PENDOWN
-// FORWARD "50
-// BACK "50
-// LEFT "30
-// RIGHT "20
+PENUP
+FORWARD "50
+PENDOWN
+FORWARD "50
+BACK "50
+LEFT "30
+RIGHT "20
 
 MAKE "distance "50
 PENUP
@@ -47,4 +47,4 @@ PENDOWN
 
 MAKE "BOXLINE "2
 
-Box :BOXLINEs
+Box :BOXLINE
